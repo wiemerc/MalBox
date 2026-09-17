@@ -8,13 +8,18 @@ networks:
 
 services:
   # dnsmasq is only needed to prevent data exfiltration via DNS. Otherwise redirecting all HTTP(S) traffic (possibly with the
-  # exception of allowed destinations like PyPI) to INetSim / PolarProxy would be enough.
+  # exception of allowed destinations like PyPI) to INetSim / SSLsplit would be enough.
   # TODO: Should we use INetSim for DNS as well? A separate instance?
   dnsmasq:
+    cap_drop:
+      - ALL
     cap_add:
       - NET_BIND_SERVICE  # to bind to ports < 1024, i. e. 53
     container_name: dnsmasq
+    cpus: 0.25
     image: docker.io/dockurr/dnsmasq:latest
+    mem_limit: 64m
+    pids_limit: 30
     # We don't need to run an init process because the image already starts tini. See https://hynek.me/articles/docker-signals/
     # for details about why we need an init process and use the exec form for the entry points.
     logging:
@@ -22,53 +27,90 @@ services:
     networks:
       malware-lab:
         ipv4_address: 10.10.10.2  # 10.10.10.1 is already used by podman's own DNS forwarder
+    read_only: true
+    tmpfs:
+      - /run:mode=1777
+      - /var/lib/misc:mode=1777  # dnsmasq's lease database
+    # Run as the "dnsmasq" user directly instead of starting as root and letting dnsmasq drop privileges itself, so we don't
+    # have to grant CAP_SETUID / CAP_SETGID / CAP_CHOWN.
+    user: dnsmasq:dnsmasq
     volumes:
       - ./dnsmasq.conf:/etc/dnsmasq.conf:ro
 
   inetsim:
+    cap_drop:
+      - ALL
     cap_add:
       - NET_BIND_SERVICE  # to bind to ports < 1024, i. e. 80 and 443
+      - SETUID  # INetSim refuses to start unless launched as root...
+      - SETGID  # ...then drops each forked service to the "inetsim" user internally
+      - CHOWN  # ...and chown()s the log files it created as root over to that user so the dropped-privilege forks can write them
     container_name: inetsim
+    cpus: 1
     image: localhost/inetsim:latest
     init: true
+    mem_limit: 256m
+    pids_limit: 100
     logging:
       driver: k8s-file
     networks:
       malware-lab:
         ipv4_address: 10.10.10.3
+    read_only: true
+    tmpfs:
+      - /run:mode=1777
+      - /var/lib/inetsim/data:mode=1777  # downloaded / served fake files
+      - /var/log/inetsim:mode=1777
     volumes:
       - ./inetsim.conf:/etc/inetsim/inetsim.conf:ro
       # TODO: Put INetSim's logs into logs/ on the host
 
   sslsplit:
+    cap_drop:
+      - ALL
     cap_add:
       - NET_BIND_SERVICE  # to bind to ports < 1024, i. e. to 443
     container_name: sslsplit
+    cpus: 0.5
     depends_on:
       - inetsim
     image: localhost/sslsplit:latest
     init: true
+    mem_limit: 128m
+    pids_limit: 50
     logging:
       driver: k8s-file
     networks:
       malware-lab:
         ipv4_address: 10.10.10.4
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
     user: sslsplit:sslsplit
     volumes:
       - ./resolv.conf:/etc/resolv.conf:ro
       - ./traces:/home/sslsplit/traces
 
   sandbox:
+    cap_drop:
+      - ALL
     container_name: sandbox
+    cpus: 1
     depends_on:
       - dnsmasq
       - inetsim
       - sslsplit
     image: localhost/sandbox:latest
     init: true
+    mem_limit: 512m
+    pids_limit: 128
     networks:
       malware-lab:
         ipv4_address: 10.10.10.5
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+      - /home/sandbox:mode=1777,size=256m  # writable area for running samples
     user: sandbox:sandbox
     # We need to put our own `/etc/resolv.conf` into the container to force it to query dnsmasq directly. With the param
     # `dns: 10.10.10.2` the query will first hit podman's DNS forwarder (10.10.10.1), which will then forward the query to dnsmasq,
@@ -77,18 +119,24 @@ services:
       - ./resolv.conf:/etc/resolv.conf:ro
 
   sandbox-init:
+    cap_drop:
+      - ALL
     cap_add:
       - NET_ADMIN  # for iptables
     container_name: sandbox-init
+    cpus: 0.25
     depends_on:
       # Has to wait for the sandbox container to run because of the shared network namespace, so not a real init container ->
       # only possible in Kubernetes
       - sandbox
     entrypoint: ["/bin/bash", "/usr/local/bin/init-sandbox.sh"]
     image: localhost/sandbox:latest
+    mem_limit: 64m
+    pids_limit: 30
     # The network stack / namespace is shared with the sandbox container, so we can configure the netfilter rules here but they
     # affect the outgoing traffic in the sandbox.
     network_mode: "service:sandbox"
+    read_only: true
     restart: "no"  # the string "no", not a boolean
     volumes:
       - ./init-sandbox.sh:/usr/local/bin/init-sandbox.sh:ro
