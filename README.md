@@ -91,3 +91,15 @@ flowchart TD
     completePcap --> suricata1 --> fastLog["<code>logs/suricata/fast.log</code>"]
     tlsPcap --> suricata2 --> fastLog
 ```
+
+## Running an analysis
+
+Perform the following steps to run an analysis:
+1. `make install` - Install all dependencies on the host (only once).
+2. `make run` - Start the sandbox, press any key to see the container logs.
+3. In the sandbox container: Run a malware sample, install packages that might be tainted...
+4. In the shell where you ran `make run`: Press Ctrl-C to stop the sandbox.
+5. `make analyze`: - Analyze the recorded syscalls (`traces/sandbox-all-syscalls.scap`) and network traffic
+    (`traces/sandbox-complete-traffic.pcap` and `traces/sandbox-decrypted-tls-traffic.pcap`) for suspicious behavior /
+    indicators of compromise (IoCs).
+6. Optional: Manually inspect the `.scap` and `.pcap` files with Stratoshark / Wireshark.
