@@ -3,6 +3,11 @@
 A container-based malware sandbox that runs suspect binaries in an isolated network while faking
 internet connectivity, and captures all traffic and syscalls for later analysis.
 
+> [!WARNING]
+> Containers aren't a hard security boundary for malware. They still share the host kernel — a kernel exploit or container escape
+> lands directly on your machine. For hostile samples you are strongly advised to run this whole stack inside a disposable /
+> snapshotted VM rather than directly on your workstation.
+
 ## Architecture
 
 The sandbox is built around a private network (10.10.10.0/24), a DNS sinkhole, fake internet services, a TLS interception proxy,
