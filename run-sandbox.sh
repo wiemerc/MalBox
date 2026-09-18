@@ -3,6 +3,7 @@
 export PODMAN_COMPOSE_WARNING_LOGS=0
 
 # Domains that dnsmasq should resolve for real (via the resolver configured on the host) instead of sinkholing to INetSim
+# TODO: Should we put the domains in a file?
 ALLOWED_DOMAINS=(pypi.org files.pythonhosted.org)
 
 printf "Setting up folders...\n"
@@ -18,6 +19,14 @@ printf "Generating dnsmasq config for allowed domains...\n"
 : > dnsmasq-allowed-domains.conf
 for domain in "${ALLOWED_DOMAINS[@]}"; do
     echo "server=/$domain/10.10.10.1" >> dnsmasq-allowed-domains.conf
+done
+
+printf "Resolving allowed domains to IP addresses for sandbox-init's iptables rules...\n"
+: > allowed-ips.txt
+for domain in "${ALLOWED_DOMAINS[@]}"; do
+    getent ahostsv4 "$domain" | awk '{print $1}' | sort -u >> allowed-ips.txt
+    # TODO: We should support IPv6 as well, but we'd need to create two separate files then and create the rules in
+    # `init-sandbox.sh` with iptables and ip6tables respectively.
 done
 
 printf "Starting containers...\n"
