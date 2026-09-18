@@ -1,3 +1,22 @@
+# Allowed destinations (e.g. PyPI) currently reach the real internet purely via iptables rules configured by `sandbox-init` (see
+# `init-sandbox.sh`): resolved IPs get exempted (RETURN + ACCEPT) from the DNAT redirects to INetSim / SSLsplit, and everything
+# not explicitly allowed is dropped by the default-deny OUTPUT policy. `sandbox` reaches the real internet directly through
+# `malware-lab`'s own routing/NAT -- there's no separate egress path.
+#
+# We considered (and decided against, for now) a dedicated egress gateway instead:
+#   - A second, non-internal `egress` network, with a NAT/masquerade path to the real internet (the same one `malware-lab` uses
+#     today).
+#   - A dual-homed `egress-gateway` container attached to both `malware-lab` and `egress`, with NET_ADMIN + IP forwarding
+#     enabled, and its own independent FORWARD-chain allow-list (built from the same resolved-IP file `sandbox-init` uses) as a
+#     second, separate enforcement point.
+#   - `sandbox-init` would add a host route per allowed IP via the gateway's `malware-lab` address (e.g.
+#     `ip route add <ip>/32 via <gateway-ip> dev eth0`) instead of just exempting it from DNAT, so `sandbox` itself would never
+#     need a real route to the outside world at all -- only the gateway container would.
+# That's more defense-in-depth (`sandbox` itself would never have a real route out, so a bug in `sandbox-init`'s rules alone
+# couldn't open real egress -- the gateway's own allow-list would still have to agree), at the cost of an extra network, an
+# extra container, and an extra allow-list to keep in sync with `sandbox-init`'s. We went with the simpler iptables-only
+# approach instead; revisit this if that turns out to not be enough isolation.
+
 networks:
   malware-lab:
     driver: bridge
