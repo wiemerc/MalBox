@@ -3,9 +3,10 @@ SHELL := /bin/bash
 .PHONY: install cert containers run analyze
 .SILENT:
 
+# TODO: Put all scripts into scripts/
 install:
 # TODO: Should we create a VM image with all the necessary tools?
-	sudo dnf install openssl podman podman-compose suricata wireshark-cli
+	sudo dnf install jq openssl podman podman-compose suricata wireshark-cli
 	sudo suricata-update
 	sudo rpm --import https://download.sysdig.com/DRAIOS-GPG-KEY.public
 	sudo curl -o /etc/yum.repos.d/draios.repo https://download.sysdig.com/stable/rpm/draios.repo
@@ -30,27 +31,5 @@ containers:
 run:
 	./run-sandbox.sh
 
-# TODO: Make output prettier
 analyze:
-	rm -f logs/falco-alerts.json
-	falco -o engine.kind=replay \
-		-o engine.replay.capture_file=traces/sandbox-all-syscalls.scap \
-		-o json_output=true \
-		-o file_output.enabled=true \
-		-o file_output.filename=logs/falco-alerts.json
-	printf "\nFalco alerts:\n"
-	jq -r .output logs/falco-alerts.json
-# TODO: Can we run Suricata as regular user?
-	rm -f logs/suricata/*
-	sudo suricata \
-		--set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
-		--set pcap-file.checksum-checks=no \
-		-l logs/suricata \
-		-r traces/sandbox-complete-traffic.pcap
-	sudo suricata \
-		--set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
-		--set pcap-file.checksum-checks=no \
-		-l logs/suricata \
-		-r traces/sandbox-decrypted-tls-traffic.pcap
-	printf "\nSuricata alerts:\n"
-	jq -r 'select(.event_type == "alert") | "\(.app_proto) - \(.alert.signature)"' logs/suricata/eve.json
+	./run-analysis.sh
