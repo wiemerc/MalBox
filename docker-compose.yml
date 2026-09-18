@@ -46,6 +46,7 @@ services:
       - SETUID  # INetSim refuses to start unless launched as root...
       - SETGID  # ...then drops each forked service to the "inetsim" user internally
       - CHOWN  # ...and chown()s the log files it created as root over to that user so the dropped-privilege forks can write them
+      - KILL  # ...and needs this to propagate SIGTERM to those forked, now-different-UID children on shutdown
     container_name: inetsim
     cpus: 1
     image: localhost/inetsim:latest
