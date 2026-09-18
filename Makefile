@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: install cert containers run analyze
+.SILENT:
 
 install:
 # TODO: Should we create a VM image with all the necessary tools?
@@ -15,7 +16,10 @@ install:
 
 cert:
 	openssl genrsa -out sslsplit-ca.key 4096
-	openssl req -new -x509 -sha256 -days 365 -key sslsplit-ca.key -out sslsplit-ca.crt -subj "/CN=ABS CloudOps Sandbox CA/OU=ABS CloudOps/O=Allianz Technology/C=DE"
+	openssl req -new -x509 -sha256 -days 365 \
+		-key sslsplit-ca.key \
+		-out sslsplit-ca.crt \
+		-subj "/CN=ABS CloudOps Sandbox CA/OU=ABS CloudOps/O=Allianz Technology/C=DE"
 
 containers:
 # TODO: Can we build the images with podman compose?
@@ -26,18 +30,27 @@ containers:
 run:
 	./run-sandbox.sh
 
+# TODO: Make output prettier
 analyze:
-	falco -o engine.kind=replay -o engine.replay.capture_file=traces/sandbox-all-syscalls.scap
+	rm -f logs/falco-alerts.json
+	falco -o engine.kind=replay \
+		-o engine.replay.capture_file=traces/sandbox-all-syscalls.scap \
+		-o json_output=true \
+		-o file_output.enabled=true \
+		-o file_output.filename=logs/falco-alerts.json
+	printf "\nFalco alerts:\n"
+	jq -r .output logs/falco-alerts.json
 # TODO: Can we run Suricata as regular user?
 	rm -f logs/suricata/*
-	sudo suricata -v \
+	sudo suricata \
 		--set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
 		--set pcap-file.checksum-checks=no \
 		-l logs/suricata \
 		-r traces/sandbox-complete-traffic.pcap
-	sudo suricata -v \
+	sudo suricata \
 		--set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
 		--set pcap-file.checksum-checks=no \
 		-l logs/suricata \
 		-r traces/sandbox-decrypted-tls-traffic.pcap
-	cat logs/suricata/fast.log
+	printf "\nSuricata alerts:\n"
+	jq -r 'select(.event_type == "alert") | "\(.app_proto) - \(.alert.signature)"' logs/suricata/eve.json
