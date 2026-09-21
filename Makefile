@@ -6,13 +6,11 @@ SHELL := /bin/bash
 # TODO: Put all scripts into scripts/
 install:
 # TODO: Should we create a VM image with all the necessary tools?
-	sudo dnf install jq openssl podman podman-compose suricata wireshark-cli
+	sudo dnf install -y suricata
 	sudo suricata-update
-	sudo rpm --import https://download.sysdig.com/DRAIOS-GPG-KEY.public
-	sudo curl -o /etc/yum.repos.d/draios.repo https://download.sysdig.com/stable/rpm/draios.repo
 	sudo rpm --import https://falco.org/repo/falcosecurity-packages.asc
 	sudo curl -o /etc/yum.repos.d/falcosecurity.repo https://falco.org/repo/falcosecurity-rpm.repo
-	sudo yum install -y sysdig falco
+	sudo yum install -y falco
 	sudo systemctl disable falco  # We don't need the service, just the tool.
 
 cert:
