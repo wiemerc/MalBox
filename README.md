@@ -32,7 +32,7 @@ TLS interception proxy, and a default-deny firewall.
   resolve to their real IP.
 - **`inetsim`** (10.10.10.3) — simulates internet services (HTTP/HTTPS enabled in `inetsim.conf`,
   everything else disabled). Returns canned files (`sample.html`, `sample_gui.exe`, etc.) for
-  any request, so malware "sees" a plausible internet.
+  any request, so malware "sees" a plausible internet. Note that this will probably work well enough if you just want to check if a piece of software (e. g. a package you just installed) does something unexpected / suspicious (e. g. "call home"). If you really want to analyze the behavior of a malware sample (e. g. its communication with a C2 server), you should swap out INetSim for nginx (or even a custom-written server, e. g. based on FastAPI) that provides responses specifically tailored to the malware. On the plus side, INetSim could simulate other protocols (e. g. SMTP or FTP) as well, if need be.
 - **`sslsplit`** (10.10.10.4) — MITMs the HTTPS traffic redirected to it, terminates TLS using the
   shared CA cert / key, and forwards to INetSim (10.10.10.3:443), while dumping decrypted traffic to a
   `.pcap` file in `./traces`.
