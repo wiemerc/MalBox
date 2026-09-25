@@ -12,21 +12,21 @@ rm -rf logs
 mkdir -p logs/suricata
 
 printf "Generating dnsmasq config for allowed domains...\n"
-: > dnsmasq-allowed-domains.conf
+: > run/dnsmasq-allowed-domains.conf
 while IFS= read -r domain; do
     if [[ $domain == '#'* ]]; then
         continue
     fi
-    echo "server=/$domain/10.10.10.1" >> dnsmasq-allowed-domains.conf
+    echo "server=/$domain/10.10.10.1" >> run/dnsmasq-allowed-domains.conf
 done < conf/allowed-domains.txt
 
 printf "Resolving allowed domains to IP addresses for sandbox-init's iptables rules...\n"
-: > allowed-ips.txt
+: > run/allowed-ips.txt
 while IFS= read -r domain; do
     if [[ $domain == '#'* ]]; then
         continue
     fi
-    getent ahostsv4 "$domain" | awk '{print $1}' | sort -u >> allowed-ips.txt
+    getent ahostsv4 "$domain" | awk '{print $1}' | sort -u >> run/allowed-ips.txt
     # TODO: We should support IPv6 as well, but we'd need to create two separate files then and create the rules in
     # `init-sandbox.sh` with iptables and ip6tables respectively.
 done < conf/allowed-domains.txt

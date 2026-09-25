@@ -3,7 +3,6 @@ SHELL := /bin/bash
 .PHONY: install cert containers run analyze
 .SILENT:
 
-# TODO: Put all scripts into scripts/
 install:
 # TODO: Should we create a VM image with all the necessary tools?
 	sudo dnf install -y suricata
@@ -14,10 +13,11 @@ install:
 	sudo systemctl disable falco  # We don't need the service, just the tool.
 
 cert:
-	openssl genrsa -out sslsplit-ca.key 4096
+	mkdir -p run/
+	openssl genrsa -out run/sslsplit-ca.key 4096
 	openssl req -new -x509 -sha256 -days 365 \
-		-key sslsplit-ca.key \
-		-out sslsplit-ca.crt \
+		-key run/sslsplit-ca.key \
+		-out run/sslsplit-ca.crt \
 		-subj "/CN=ABS CloudOps Sandbox CA/OU=ABS CloudOps/O=Allianz Technology/C=DE"
 
 containers:
@@ -27,7 +27,7 @@ containers:
 	podman build -t sandbox -f Dockerfile-sandbox .
 
 run:
-	./run-sandbox.sh
+	scripts/run-sandbox.sh
 
 analyze:
-	./run-analysis.sh
+	scripts/run-analysis.sh

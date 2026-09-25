@@ -2,7 +2,7 @@ FROM debian:stable-slim
 
 RUN apt update && apt install -y curl sslsplit && rm -rf /var/lib/apt/lists/* 
 RUN useradd -ms /bin/bash sslsplit
-COPY sslsplit-ca.key sslsplit-ca.crt start-proxy.sh /home/sslsplit/
+COPY run/sslsplit-ca.key run/sslsplit-ca.crt scripts/start-proxy.sh /home/sslsplit/
 RUN chown -R sslsplit:sslsplit /home/sslsplit
 RUN chmod 0755 /home/sslsplit/start-proxy.sh
 
