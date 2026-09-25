@@ -57,6 +57,9 @@ services:
       # the resolver configured on the host.
       - ./run/dnsmasq-allowed-domains.conf:/etc/dnsmasq.d/allowed-domains.conf:ro
 
+  # In case we ever wanted to analyze a specific malware sample in more detail, we should swap out INetSim for nginx, which would
+  # only provide the required responses (and not respond to all requests with a file like INetSIM), in the format expected by
+  # the malware.
   inetsim:
     cap_drop:
       - ALL

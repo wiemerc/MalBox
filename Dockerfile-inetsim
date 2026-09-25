@@ -4,6 +4,9 @@ RUN apt-get update && apt-get install -y inetsim && rm -rf /var/lib/apt/lists/*
 # We need to use our own root CA cert instead of INetSim's default cert, otherwise clients in the sandbox (at least curl)
 # complain about a weak signature digest algorithm ("SSL certificate problem: CA signature digest algorithm too weak")
 COPY run/sslsplit-ca.key run/sslsplit-ca.crt /var/lib/inetsim/certs/
-RUN chown -R inetsim:inetsim  /var/lib/inetsim/certs
+# Replace INetSim's stock fake files: they identify themselves as INetSim's (in visible text for sample.html/sample.txt, and as
+# strings embedded in the compiled binary for sample_gui.exe, also served for .com requests)
+COPY conf/fakefiles/sample.html conf/fakefiles/sample.txt conf/fakefiles/sample_gui.exe /var/lib/inetsim/http/fakefiles/
+RUN chown -R inetsim:inetsim /var/lib/inetsim/certs /var/lib/inetsim/http/fakefiles
 
 ENTRYPOINT ["inetsim"]
