@@ -3,7 +3,7 @@ FROM python:3.13-slim-bookworm
 # TODO: Trim down image to the bare minimum to minimize the attack surface. Maybe Busybox?
 RUN apt update && apt install -y curl dnsutils iproute2 iptables iputils-ping openssl && rm -rf /var/lib/apt/lists/* 
 RUN useradd -ms /bin/bash sandbox
-COPY run/sslsplit-ca.crt /usr/local/share/ca-certificates/sslsplit-ca.crt
+COPY run/*.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 COPY scripts/smoke-test.sh /home/sandbox/
 

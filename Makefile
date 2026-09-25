@@ -12,13 +12,17 @@ install:
 	sudo yum install -y falco
 	sudo systemctl disable falco  # We don't need the service, just the tool.
 
-cert:
+certs:
 	mkdir -p run/
 	openssl genrsa -out run/sslsplit-ca.key 4096
 	openssl req -new -x509 -sha256 -days 365 \
 		-key run/sslsplit-ca.key \
 		-out run/sslsplit-ca.crt \
 		-subj "/CN=ABS CloudOps Sandbox CA/OU=ABS CloudOps/O=Allianz Technology/C=DE"
+# Adapt the list of required root CA certs and the paths to the environment where the sandbox runs.
+	cp /etc/pki/ca-trust/source/anchors/Allianz_Root_CA_IV.pem run/Allianz_Root_CA_IV.crt
+	cp /etc/pki/ca-trust/source/anchors/Allianz_Infrastructure_CA_VI.pem run/Allianz_Infrastructure_CA_VI.crt
+	cp /etc/pki/ca-trust/source/anchors/Zscaler_Root_CA.pem run/Zscaler_Root_CA.crt
 
 containers:
 # TODO: Can we build the images with podman compose?
