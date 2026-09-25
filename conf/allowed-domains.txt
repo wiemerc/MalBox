@@ -1,3 +1,4 @@
 # Domains that dnsmasq should resolve for real (via the resolver configured on the host) instead of sinkholing them to INetSim
 pypi.org
 files.pythonhosted.org
+artifactory.prod.abs.enablingtools.allianz
