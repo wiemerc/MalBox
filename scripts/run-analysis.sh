@@ -42,3 +42,8 @@ jq -r '
     (if $sev == 1 then "\u001b[1;31m" elif $sev == 2 then "\u001b[1;33m" else "\u001b[1;36m" end) as $color |
     "\($color)[\(.app_proto)]\u001b[0m \(.alert.signature)"
 ' logs/suricata/eve.json
+printf "\n"
+
+# TODO: Create report with touched files, domain / host names, IP addresses, network connections...
+printf "List of queried DNS domains:\n"
+jq -r 'select(.event_type == "dns" and .dns.type == "query") | "\(.dns.rrtype) \(.dns.rrname)"' < logs/suricata/eve.json
