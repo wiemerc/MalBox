@@ -42,8 +42,14 @@ jq -r '
     (if $sev == 1 then "\u001b[1;31m" elif $sev == 2 then "\u001b[1;33m" else "\u001b[1;36m" end) as $color |
     "\($color)[\(.app_proto)]\u001b[0m \(.alert.signature)"
 ' logs/suricata/eve.json
-printf "\n"
 
 # TODO: Create report with touched files, domain / host names, IP addresses, network connections...
-printf "List of queried DNS domains:\n"
+# TODO: The current sysdig version (0.41.3) doesn't decode the path argument of statx() calls, so files / folders might be missed.
+printf "\nList of touched files / folders (except in /{dev,lib,sys,usr}):\n"
+{
+    sysdig -r traces/sandbox-all-syscalls.scap 'evt.category=file and fd.name exists' -p '%fd.name'
+    sysdig -r traces/sandbox-all-syscalls.scap 'evt.type=newfstatat' -p '%evt.arg.path'
+} | sort -u | grep -vP '^/(dev|lib|sys|usr)' | grep -v UNKNOWN
+
+printf "\nList of queried DNS domains:\n"
 jq -r 'select(.event_type == "dns" and .dns.type == "query") | "\(.dns.rrtype) \(.dns.rrname)"' < logs/suricata/eve.json
