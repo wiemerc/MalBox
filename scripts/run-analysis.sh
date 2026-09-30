@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+# Run analysis
 printf "Running Falco on the captured system calls...\n"
 rm -f logs/falco-alerts.json
 falco -o engine.kind=replay \
@@ -13,6 +15,7 @@ falco -o engine.kind=replay \
 
 rm -f logs/suricata/*
 # TODO: Can we run Suricata as regular user?
+# TODO: Suppress alert for nginx's default page
 printf "Running Suricata on the captured network traffic...\n"
 sudo suricata \
     --set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
@@ -27,6 +30,7 @@ sudo suricata \
     -r traces/sandbox-decrypted-tls-traffic.pcap
 
 
+# Create report
 print_banner() {
     printf "\x1b[1m"; figlet -ct "Sandbox activities"; printf "\x1b[0m"
 }
@@ -73,4 +77,9 @@ jq -r '
     "\($color)[\(.app_proto)]\u001b[0m \(.alert.signature)"
 ' logs/suricata/eve.json
 
-# TODO: Exit with status 1 if alerts were found
+
+if [[ -f logs/falco-alerts.json || -s logs/suricata/fast.log ]]; then
+    printf "\n\x1b[1;31mAlerts were found - see the report above for details\x1b[0m\n"
+    exit 1
+fi
+exit 0
