@@ -4,8 +4,9 @@ SHELL := /bin/bash
 .SILENT:
 
 install:
-# TODO: Should we create a VM image with all the necessary tools?
 	sudo dnf install -y suricata
+# Add below additional rules you want to disable.
+	printf "2023668\n" | sudo tee /etc/suricata/disable.conf > /dev/null
 	sudo suricata-update
 	sudo rpm --import https://falco.org/repo/falcosecurity-packages.asc
 	sudo curl -o /etc/yum.repos.d/falcosecurity.repo https://falco.org/repo/falcosecurity-rpm.repo
