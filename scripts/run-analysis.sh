@@ -43,7 +43,6 @@ jq -r '
     "\($color)[\(.app_proto)]\u001b[0m \(.alert.signature)"
 ' logs/suricata/eve.json
 
-# TODO: Create report with touched files, domain / host names, IP addresses, network connections...
 # TODO: The current sysdig version (0.41.3) doesn't decode the path argument of statx() calls, so files / folders might be missed.
 printf "\nList of touched files / folders (except in /{dev,lib,sys,usr}):\n"
 {
@@ -53,3 +52,14 @@ printf "\nList of touched files / folders (except in /{dev,lib,sys,usr}):\n"
 
 printf "\nList of queried DNS domains:\n"
 jq -r 'select(.event_type == "dns" and .dns.type == "query") | "\(.dns.rrtype) \(.dns.rrname)"' < logs/suricata/eve.json
+
+printf "\n List of TLS SNIs:\n"
+jq -r 'select(.event_type == "tls") | .tls.sni' < logs/suricata/eve.json
+
+printf "\n List of HTTP(S) requests:\n"
+jq -r '
+    select(.event_type == "http") |
+    "\(.http.http_method) \(.http.hostname) \(.http.url) \(.http.status) \(.http.http_content_type)"
+' < logs/suricata/eve.json
+
+# TODO: Exit with status 1 if alerts were found
