@@ -5,6 +5,8 @@ set -o pipefail
 
 iptables -P OUTPUT DROP  # default policy: drop all traffic
 iptables -A OUTPUT -o lo -j ACCEPT
+ip6tables -P OUTPUT DROP
+ip6tables -A OUTPUT -o lo -j ACCEPT
 
 # Allow DNS queries to dnsmasq
 iptables -A OUTPUT -d 10.10.10.2 -p udp --dport 53 -j ACCEPT
@@ -20,7 +22,15 @@ while IFS= read -r ip; do
     iptables -t nat -A OUTPUT -p tcp -d "$ip" --dport 443 -j RETURN
     iptables        -A OUTPUT -p tcp -d "$ip" --dport 80  -j ACCEPT
     iptables        -A OUTPUT -p tcp -d "$ip" --dport 443 -j ACCEPT
-done < /etc/malbox/allowed-ips.txt
+done < /etc/malbox/allowed-ips-v4.txt
+# Note that the rules for IPv6 have no effect unless both the host and the 
+while IFS= read -r ip; do
+    [ -z "$ip" ] && continue
+    ip6tables -t nat -A OUTPUT -p tcp -d "$ip" --dport 80  -j RETURN
+    ip6tables -t nat -A OUTPUT -p tcp -d "$ip" --dport 443 -j RETURN
+    ip6tables        -A OUTPUT -p tcp -d "$ip" --dport 80  -j ACCEPT
+    ip6tables        -A OUTPUT -p tcp -d "$ip" --dport 443 -j ACCEPT
+done < /etc/malbox/allowed-ips-v6.txt
 
 # Redirect HTTP traffic directly to INetSim
 iptables -t nat -A OUTPUT -p tcp --dport 80  -j DNAT --to-destination 10.10.10.3

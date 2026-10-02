@@ -25,4 +25,6 @@
     -c /home/sslsplit/sslsplit-ca.crt \
     -X /home/sslsplit/traces/sandbox-decrypted-tls-traffic.pcap \
     https 10.10.10.4 443 \
-    10.10.10.3 443
+    10.10.10.3 443 \
+    https fd10:10:10:10::4 443 \
+    fd10:10:10:10::3 443

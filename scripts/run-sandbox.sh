@@ -24,14 +24,14 @@ while IFS= read -r domain; do
 done < conf/allowed-domains.txt
 
 printf "Resolving allowed domains to IP addresses for sandbox-init's iptables rules...\n"
-: > run/allowed-ips.txt
+: > run/allowed-ips-v4.txt
+: > run/allowed-ips-v6.txt
 while IFS= read -r domain; do
     if [[ $domain == '#'* ]]; then
         continue
     fi
-    getent ahostsv4 "$domain" | awk '{print $1}' | sort -u >> run/allowed-ips.txt
-    # TODO: We should support IPv6 as well, but we'd need to create two separate files then and create the rules in
-    # `init-sandbox.sh` with iptables and ip6tables respectively.
+    getent ahostsv4 "$domain" | awk '{print $1}' | sort -u >> run/allowed-ips-v4.txt || true
+    getent ahostsv6 "$domain" | grep -v '^::ffff' | awk '{print $1}' | sort -u >> run/allowed-ips-v6.txt || true
 done < conf/allowed-domains.txt
 
 printf "Starting containers...\n"
