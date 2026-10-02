@@ -48,19 +48,19 @@ print_header "List of touched files / folders (except in /{dev,lib,sys,usr}):"
 {
     sysdig -r traces/sandbox-all-syscalls.scap 'evt.category=file and fd.name exists' -p '%fd.name'
     sysdig -r traces/sandbox-all-syscalls.scap 'evt.type=newfstatat' -p '%evt.arg.path'
-} | sort -u | grep -vP '^/(dev|lib|sys|usr)' | grep -v UNKNOWN
+} | sort -u | grep -vP '^/(dev|lib|sys|usr)' | grep -v UNKNOWN || true
 
 print_header "List of DNS queries:"
-jq -r 'select(.event_type == "dns" and .dns.type == "query") | "\(.dns.rrtype) \(.dns.rrname)"' < logs/suricata/eve.json
+jq -r 'select(.event_type == "dns" and .dns.type == "query") | "\(.dns.rrtype) \(.dns.rrname)"' < logs/suricata/eve.json | sort -u
 
 print_header "List of TLS SNIs:"
-jq -r 'select(.event_type == "tls") | .tls.sni' < logs/suricata/eve.json
+jq -r 'select(.event_type == "tls") | .tls.sni' < logs/suricata/eve.json | sort -u
 
 print_header "List of HTTP(S) requests:"
 jq -r '
     select(.event_type == "http") |
     "\(.http.http_method) \(.http.hostname) \(.http.url) \(.http.status) \(.http.http_content_type)"
-' < logs/suricata/eve.json
+' < logs/suricata/eve.json | sort -u
 
 print_header "Falco alerts:"
 if [[ -f logs/falco-alerts.json ]]; then
