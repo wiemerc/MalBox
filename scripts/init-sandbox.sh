@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+
 iptables -P OUTPUT DROP  # default policy: drop all traffic
 iptables -A OUTPUT -o lo -j ACCEPT
 

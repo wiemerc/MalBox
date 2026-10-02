@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+
 export PODMAN_COMPOSE_WARNING_LOGS=0
 
 printf "Setting up folders...\n"

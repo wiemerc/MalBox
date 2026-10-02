@@ -1,6 +1,10 @@
 #!/bin/bash
 
 
+set -o errexit
+set -o pipefail
+
+
 # Run analysis
 printf "Running Falco on the captured system calls...\n"
 rm -f logs/falco-alerts.json
@@ -15,7 +19,6 @@ falco -o engine.kind=replay \
 
 rm -f logs/suricata/*
 # TODO: Can we run Suricata as regular user?
-# TODO: Suppress alert for nginx's default page
 printf "Running Suricata on the captured network traffic...\n"
 sudo suricata \
     --set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
