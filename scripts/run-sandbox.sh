@@ -48,7 +48,7 @@ sudo sysdig --modern-bpf -w traces/sandbox-all-syscalls.scap container.id=$(podm
 sysdig_pid=$!
 
 read -p "Press any key to see the container logs, press Ctrl-C to stop the sandbox... "
-podman compose logs --follow --names
+podman compose logs --follow --names || true
 printf "Stopping sysdig and tshark...\n"
 kill $sysdig_pid $tshark_pid
 printf "Stopping containers...\n"
