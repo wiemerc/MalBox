@@ -1,4 +1,4 @@
-# co-malbox
+# MalBox
 
 A container-based malware sandbox that runs suspect binaries in an isolated network while faking
 internet connectivity, and captures all traffic and syscalls for later analysis.
