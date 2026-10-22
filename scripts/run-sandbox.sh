@@ -37,10 +37,15 @@ done < conf/allowed-domains.txt
 printf "Starting containers...\n"
 podman compose up -d
 
-# With `nsenter` the `tshark` command doesn't show up in the container's process list, so the malware can't see it.
 printf "Starting tshark...\n"
+# With `nsenter` the `tshark` command doesn't show up in the container's process list, so the malware can't see it. However, we
+# have to let `tshark` write its output to stdout (`-w -`) and redirect stdout to a file because of a weird combination of
+# permissions and `dumpcap` (which is run by `tshark`) behavior. On the EC2 instance `/home/malbox` is 0700, so even though
+# `traces/` is 0777, nobody except malbox can walk through the home directory to reach it. And the fact that `tshark` is run as
+# root (because `nsenter` is run as root) doesn't help here either because `dumpcap` drops all privileges except CAP_NET_RAW and
+# CAP_NET_ADMIN *before* it tries to open the output file.
 sudo nsenter -t $(podman inspect -f '{{.State.Pid}}' sandbox) -n \
-    tshark -i eth0 -n -s0 -w traces/sandbox-complete-traffic.pcap > /dev/null 2>&1 &
+    tshark -i eth0 -n -s0 -w - > traces/sandbox-complete-traffic.pcap 2> /dev/null &
 tshark_pid=$!
 # `sysdig` expects the *short* container id (the first 12 digits).
 printf "Starting sysdig...\n"
