@@ -18,15 +18,15 @@ falco -o engine.kind=replay \
     -o libs_logger.enabled=false
 
 rm -f logs/suricata/*
-# TODO: Can we run Suricata as regular user?
 printf "Running Suricata on the captured network traffic...\n"
-sudo suricata \
+# The user that runs this script has to be in the group "suricata" so that it can run suricata without sudo.
+suricata \
     --set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
     --set pcap-file.checksum-checks=no \
     -l logs/suricata \
     -r traces/sandbox-complete-traffic.pcap
 printf "Running Suricata on the decrypted TLS traffic...\n"
-sudo suricata \
+suricata \
     --set vars.address-groups.HOME_NET="[10.10.10.5/32]" \
     --set pcap-file.checksum-checks=no \
     -l logs/suricata \
