@@ -71,7 +71,7 @@ if [[ -f logs/falco-alerts.json ]]; then
         elif .priority == "Warning" or .priority == "Notice" then "\u001b[1;33m"
         else "\u001b[1;36m" end) as $color |
         "\($color)[\(.priority)]\u001b[0m \(.output)"
-    ' logs/falco-alerts.json
+    ' logs/falco-alerts.json | sort -u
 fi
 
 print_header "Suricata alerts:"
@@ -80,7 +80,7 @@ jq -r '
     (.alert.severity // 3) as $sev |
     (if $sev == 1 then "\u001b[1;31m" elif $sev == 2 then "\u001b[1;33m" else "\u001b[1;36m" end) as $color |
     "\($color)[\(.app_proto)]\u001b[0m \(.alert.signature)"
-' logs/suricata/eve.json
+' logs/suricata/eve.json | sort -u
 
 
 if [[ -f logs/falco-alerts.json || -s logs/suricata/fast.log ]]; then
