@@ -16,6 +16,8 @@ iptables -A OUTPUT -d 10.10.10.2 -p tcp --dport 53 -j ACCEPT
 # internet instead of INetSim / SSLsplit. Note that there is a race condition here: A domain might change its IP address(es)
 # after it was resolved by `run-sandbox.sh` but before it's resolved again in the sandbox container, in which case the traffic
 # would be redirected to INetSim / SSLsplit.
+# TODO: Should we also intercept the HTTPS traffic to the allowed destinations? This would mean this traffic has to be redirected
+# to a second SSLsplit instance that forwards the traffic to the real destinations.
 while IFS= read -r ip; do
     [ -z "$ip" ] && continue
     iptables -t nat -A OUTPUT -p tcp -d "$ip" --dport 80  -j RETURN

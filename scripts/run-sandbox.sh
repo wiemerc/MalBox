@@ -2,8 +2,25 @@
 
 set -o errexit
 set -o pipefail
+# TODO: Should we trap SIGTERM and SIGINT?
 
 export PODMAN_COMPOSE_WARNING_LOGS=0
+
+if [[ $# == 0 ]]; then
+    mode=interactive
+elif [[ $# == 1 ]]; then
+    if [[ $(basename "$1") == requirements.txt ]]; then
+        mode=python
+    elif [[ $(basename "$1") == package.json ]]; then
+        mode=npm
+    else
+        printf "List of packages has to be provided as requirements.txt or package.json\n"
+        exit 1
+    fi
+else
+    printf "Usage: run-sandbox.sh [package.json | requirements.txt]\n"
+    exit 1
+fi
 
 printf "Setting up folders...\n"
 rm -rf traces/
@@ -35,7 +52,7 @@ while IFS= read -r domain; do
 done < conf/allowed-domains.txt
 
 printf "Starting containers...\n"
-podman compose up -d
+podman compose --podman-run-args=--http-proxy=false up -d
 
 printf "Starting tshark...\n"
 # With `nsenter` the `tshark` command doesn't show up in the container's process list, so the malware can't see it. However, we
@@ -52,8 +69,31 @@ printf "Starting sysdig...\n"
 sudo sysdig --modern-bpf -w traces/sandbox-all-syscalls.scap container.id=$(podman inspect -f '{{.Id}}' sandbox | head -c12) &
 sysdig_pid=$!
 
-read -p "Press any key to see the container logs, press Ctrl-C to stop the sandbox... "
-podman compose logs --follow --names || true
+case $mode in
+    interactive)
+        read -p "No list of packages was provided, press any key to see the container logs, perform some action in the sandbox container, then press Ctrl-C to stop the sandbox... "
+        podman compose logs --follow --names || true
+        ;;
+    
+    python)
+        printf "Installing Python packages listed in $1...\n"
+        podman cp $1 sandbox:requirements.txt
+        if [[ -f conf/pip.conf ]]; then
+            podman cp conf/pip.conf sandbox:pip.conf
+            podman exec sandbox env PIP_CONFIG_FILE=./pip.conf pip install -r requirements.txt || true
+        else
+            podman exec sandbox pip install -r requirements.txt || true
+        fi
+        # TODO: Should we also import all packages? The problem is that sometimes the packages are named differently in
+        # requirements.txt than in the code, e. g. PyYAML -> yaml.
+        ;;
+    
+    npm)
+        podman cp $1 sandbox:package.json
+        # TODO
+        ;;
+esac
+
 printf "Stopping sysdig and tshark...\n"
 kill $sysdig_pid $tshark_pid
 printf "Stopping containers...\n"
