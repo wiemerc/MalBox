@@ -23,13 +23,15 @@ else
 fi
 
 printf "Setting up folders...\n"
+rm -rf run/
+mkdir run/
 rm -rf traces/
 mkdir traces/
 # Making traces/ world-writable is necessary for the SSLsplit container to be able to write into this folder because that container's
 # sslsplit user with UID 1000 gets mapped to a completely different UID on the host (behavior of rootless Podman).
 chmod 0777 traces/
-rm -rf logs
-mkdir -p logs/suricata
+rm -rf logs/
+mkdir -p logs/suricata/
 
 printf "Generating dnsmasq config for allowed domains...\n"
 : > run/dnsmasq-allowed-domains.conf
