@@ -76,23 +76,31 @@ case $mode in
         read -p "No list of packages was provided, press any key to see the container logs, perform some action in the sandbox container, then press Ctrl-C to stop the sandbox... "
         podman compose logs --follow --names || true
         ;;
-    
+
     python)
         printf "Installing Python packages listed in $1...\n"
         podman cp $1 sandbox:requirements.txt
+        printf "\n>>>>>>>>>>>> Output of pip <<<<<<<<<<<<\n"
         if [[ -f conf/pip.conf ]]; then
             podman cp conf/pip.conf sandbox:pip.conf
             podman exec sandbox env PIP_CONFIG_FILE=./pip.conf pip install -r requirements.txt || true
         else
             podman exec sandbox pip install -r requirements.txt || true
         fi
+        printf ">>>>>>>>>>>>  End of output <<<<<<<<<<<<\n\n"
         # TODO: Should we also import all packages? The problem is that sometimes the packages are named differently in
         # requirements.txt than in the code, e. g. PyYAML -> yaml.
         ;;
-    
+
     npm)
+        printf "Installing Node.js packages listed in $1...\n"
         podman cp $1 sandbox:package.json
-        # TODO
+        if [[ -f conf/.npmrc ]]; then
+            podman cp conf/.npmrc sandbox:.npmrc
+        fi
+        printf "\n>>>>>>>>>>>> Output of npm <<<<<<<<<<<<\n"
+        podman exec sandbox npm install || true
+        printf ">>>>>>>>>>>>  End of output <<<<<<<<<<<<\n\n"
         ;;
 esac
 

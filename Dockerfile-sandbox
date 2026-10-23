@@ -1,7 +1,9 @@
 FROM python:3.13-slim-bookworm
 
 # TODO: Trim down image to the bare minimum to minimize the attack surface. Maybe Busybox?
-RUN apt update && apt install -y curl dnsutils iproute2 iptables iputils-ping openssl && rm -rf /var/lib/apt/lists/* 
+# TODO: Should we use specific Python and Node.js versions, e. g. always the latest stable ones?
+# TODO: Should we switch to a Fedora base image?
+RUN apt update && apt install -y curl dnsutils iproute2 iptables iputils-ping nodejs npm openssl && rm -rf /var/lib/apt/lists/* 
 RUN useradd -ms /bin/bash sandbox
 COPY run/*.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
