@@ -57,6 +57,8 @@ print_header "List of TLS SNIs:"
 jq -r 'select(.event_type == "tls") | .tls.sni' < logs/suricata/eve.json | sort -u
 
 print_header "List of HTTP(S) requests:"
+# TODO: With POST request it'd be more useful to have the content type of the request, not of the response, but Suricata doesn't
+#       provide that. Should we extract the requests from the PCAP files?
 jq -r '
     select(.event_type == "http") |
     "\(.http.http_method) \(.http.hostname) \(.http.url) \(.http.status) \(.http.http_content_type)"

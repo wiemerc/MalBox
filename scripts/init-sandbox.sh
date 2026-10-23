@@ -25,7 +25,7 @@ while IFS= read -r ip; do
     iptables        -A OUTPUT -p tcp -d "$ip" --dport 80  -j ACCEPT
     iptables        -A OUTPUT -p tcp -d "$ip" --dport 443 -j ACCEPT
 done < /etc/malbox/allowed-ips-v4.txt
-# Note that the rules for IPv6 have no effect unless both the host and the 
+# Note that the rules for IPv6 have no effect unless the host also has an IPv6 address.
 while IFS= read -r ip; do
     [ -z "$ip" ] && continue
     ip6tables -t nat -A OUTPUT -p tcp -d "$ip" --dport 80  -j RETURN

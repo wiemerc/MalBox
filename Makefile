@@ -17,6 +17,7 @@ install:
 certs:
 	mkdir -p run/
 	openssl genrsa -out run/sslsplit-ca.key 4096
+# TODO: Should we use a fake CN to be more stealthy? Google says no.
 	openssl req -new -x509 -sha256 -days 365 \
 		-key run/sslsplit-ca.key \
 		-out run/sslsplit-ca.crt \

@@ -1,3 +1,3 @@
-# Domains that dnsmasq should resolve for real (via the resolver configured on the host) instead of sinkholing them to INetSim
+# Domains we want the sandbox to be able to reach
 pypi.org
 files.pythonhosted.org
